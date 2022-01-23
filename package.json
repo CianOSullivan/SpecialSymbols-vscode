@@ -1,0 +1,74 @@
+{
+  "name": "favourites",
+  "publisher": "Cian O'Sullivan",
+  "displayName": "Favourites",
+  "description": "Favourites Extension",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "secondext.helloWorld",
+        "title": "Add Favourite"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "favouriteBar",
+          "title": "Favourites",
+          "icon": "resources/heart.svg"
+        }
+      ]
+    },
+    "views": {
+      "favouriteBar": [
+        {
+          "id": "favouriteBar",
+          "name": "Favourites",
+          "icon": "resources/heart.svg",
+          "contextualTitle": "Favourites"
+        }
+      ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == typescript",
+          "command": "secondext.helloWorld",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^14.18.5",
+    "@types/vscode": "^1.63.0",
+    "@typescript-eslint/eslint-plugin": "^5.9.1",
+    "@typescript-eslint/parser": "^5.9.1",
+    "@vscode/test-electron": "^2.0.3",
+    "eslint": "^8.6.0",
+    "glob": "^7.2.0",
+    "mocha": "^9.1.3",
+    "typescript": "^4.5.4"
+  }
+}
