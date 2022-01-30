@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
-import { Favourite } from './Favourite';
+import { Favourite, TreeItem } from './Favourite';
 import {existsSync, mkdirSync, writeFile, readFileSync} from 'fs';
 
 // this method is called when your extension is activated
@@ -13,14 +13,19 @@ export function activate(context: vscode.ExtensionContext) {
 	const storagePath: string = context.globalStorageUri.fsPath;
 	const storageFile: string = Uri.joinPath(context.globalStorageUri, "favourites").path;
 	checkPathExists(storagePath, storageFile);
-	console.log(storageFile);
-	const treeMaker = new Favourite(storageFile);
+	console.debug("Storage file: " + storageFile);
 
+	vscode.commands.registerCommand('favourite.addEntry', (item: TreeItem) => {
+		vscode.window.showInformationMessage('Successfully called add entry.');
+		gotoSymbol(item);
+	});
+
+	const treeMaker = new Favourite(storageFile);
 
 	//vscode.window.registerTreeDataProvider('favouriteBar', favouriteBar);
 	vscode.window.createTreeView('favouriteBar', {
 		treeDataProvider: treeMaker
-	  });
+	});
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -112,4 +117,49 @@ function checkPathExists(storagePath: string, storageFile: string) {
 			console.debug('Favourites file created!');
 		});
 	}
+}
+
+function gotoSymbol(item: TreeItem) {
+	if (item.location === undefined) {
+		return;
+	}
+
+	console.log("Going to symbol: " + item);
+	let uri = Uri.file(item.location);
+
+	vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", uri).then(
+		(symbols) => {
+			if (symbols !== undefined && Array.isArray(symbols)) {
+				symbols.forEach(element => {
+
+					if (element.name === item.label) {
+						// Go to the file
+						vscode.workspace.openTextDocument(uri).then(doc => {
+							vscode.window.showTextDocument(doc).then(() => {
+								// Go to the line
+								let editor = vscode.window.activeTextEditor;
+								if (editor !== undefined) {
+									const position = editor.selection.active;
+									let range = element.location.range;
+									var newPosition = position.with(range.start, 0);
+									console.log("Moving to ");
+									console.log(newPosition);
+
+									var newSelection = new vscode.Selection(newPosition, newPosition);
+									editor.selection = newSelection;
+									editor.revealRange(newSelection);
+								}
+								return;
+							});
+						});
+
+
+					}
+
+				});
+			}
+	}).then(undefined, err => {
+		console.error('Error: Could not retrieve sycmbols list.');
+		console.error(err);
+	});
 }

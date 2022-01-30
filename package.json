@@ -11,7 +11,9 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onCommand:favourite.addEntry",
+    "*",
+    "onView:favouriteBar"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -19,7 +21,11 @@
       {
         "command": "secondext.helloWorld",
         "title": "Add Favourite"
-      }
+      },
+      {
+				"command": "favourite.addEntry",
+				"title": "Add"
+			}
     ],
     "viewsContainers": {
       "activitybar": [
@@ -46,6 +52,11 @@
           "when": "resourceLangId == typescript",
           "command": "secondext.helloWorld",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+					"command": "favourite.addEntry"
         }
       ]
     }
