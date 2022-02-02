@@ -1,26 +1,46 @@
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 import { Favourite, TreeItem } from './Favourite';
-import {existsSync, mkdirSync, writeFile, readFileSync} from 'fs';
+import { existsSync, mkdirSync, writeFile, readFileSync } from 'fs';
+import { LocalStorageService } from './LocalStorageService';
+
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "secondext" is now active!');
+
 	const storagePath: string = context.globalStorageUri.fsPath;
 	const storageFile: string = Uri.joinPath(context.globalStorageUri, "favourites").path;
 	checkPathExists(storagePath, storageFile);
 	console.debug("Storage file: " + storageFile);
+
+	const treeMaker = new Favourite(storageFile, context);
+
 
 	vscode.commands.registerCommand('favourite.addEntry', (item: TreeItem) => {
 		vscode.window.showInformationMessage('Successfully called add entry.');
 		gotoSymbol(item);
 	});
 
-	const treeMaker = new Favourite(storageFile);
+	vscode.commands.registerCommand('favourite.addNote', (item: TreeItem) => {
+		vscode.window.showInformationMessage('Successfully called add note.');
+		let options: vscode.InputBoxOptions = {
+			prompt: "Enter symbol note: ",
+			placeHolder: "Note"
+		};
+
+		vscode.window.showInputBox(options).then(value => {
+			if (!value) {
+				return;
+			}
+			treeMaker.addNote(item, value);
+		});
+	});
+
 
 	//vscode.window.registerTreeDataProvider('favouriteBar', favouriteBar);
 	vscode.window.createTreeView('favouriteBar', {
@@ -96,7 +116,7 @@ function addFavourite(activeEditor: vscode.TextEditor, symbol: vscode.DocumentSy
 		if (err) {
 			throw err;
 		}
-	
+
 		// success case, the file was saved
 		console.debug('Favourites file updated!');
 	});}
@@ -112,7 +132,7 @@ function checkPathExists(storagePath: string, storageFile: string) {
 			if (err) {
 				throw err;
 			}
-		
+
 			// success case, the file was saved
 			console.debug('Favourites file created!');
 		});
