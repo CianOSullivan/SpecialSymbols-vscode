@@ -11,8 +11,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:favourite.addEntry",
-    "onCommand:favourite.addNote",
     "*",
     "onView:favouriteBar"
   ],
@@ -20,12 +18,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "secondext.helloWorld",
+        "command": "favourite.addSymbol",
         "title": "Add Favourite"
       },
       {
-				"command": "favourite.addEntry",
-				"title": "Add"
+        "command": "favourite.delSymbol",
+        "title": "Delete Favourite"
+      },
+      {
+				"command": "favourite.goToSymbol",
+				"title": "Go to the given symbol"
 			},
       {
 				"command": "favourite.addNote",
@@ -55,13 +57,16 @@
       "editor/context": [
         {
           "when": "resourceLangId == typescript",
-          "command": "secondext.helloWorld",
+          "command": "favourite.addSymbol",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-					"command": "favourite.addEntry"
+					"command": "favourite.goToSymbol"
+        },
+        {
+					"command": "favourite.delSymbol"
         },
         {
 					"command": "favourite.addNote",

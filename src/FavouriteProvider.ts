@@ -1,18 +1,25 @@
 import * as vscode from 'vscode';
-import { accessSync, existsSync, mkdirSync, writeFile, readFile, readFileSync} from 'fs';
+import { readFileSync} from 'fs';
 import { LocalStorageService } from './LocalStorageService';
 
-export class Favourite implements vscode.TreeDataProvider<TreeItem> {
+export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 	data: TreeItem[];
 	confFile: string;
 	storageManager: LocalStorageService;
 	context: vscode.ExtensionContext;
+
+	private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined> = new vscode.EventEmitter<TreeItem | undefined>();
+	readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined> = this._onDidChangeTreeData.event;
 
 	constructor(f: string, c: vscode.ExtensionContext) {
 		this.storageManager = new LocalStorageService(c.globalState);
 		this.context = c;
 		this.confFile = f;
 		this.data = this.readConfig();
+	}
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	getChildren(element?: TreeItem|undefined): vscode.ProviderResult<TreeItem[]> {
@@ -43,18 +50,13 @@ export class Favourite implements vscode.TreeDataProvider<TreeItem> {
 			var toAdd: Array<TreeItem> = [];
 			for (var arr in obj[key]) {
 				let item: TreeItem = new TreeItem(obj[key][arr], key);
-				console.log("Key: " + key);
-				console.log("Obj: " + obj[key][arr]);
-				let noteKey: string = key + ":" + obj[key][arr];
-				console.log(noteKey);
-				let note: string | undefined = this.storageManager.getValue(noteKey);
+				let note: string | undefined = this.storageManager.getValue(key + ":" + obj[key][arr]);
+
 				if (note !== undefined) {
-					console.log("Assigning note");
 					item.setNote(note);
 				}
 
 				toAdd.push(item);
-
 			}
 			tree.push(new TreeItem(key, undefined, toAdd));
 			toAdd = [];
@@ -76,12 +78,13 @@ export class TreeItem extends vscode.TreeItem {
 									vscode.TreeItemCollapsibleState.Expanded);
 		this.children = children;
 		this.command = {
-			command: 'favourite.addEntry',
+			command: 'favourite.goToSymbol',
 			title: '',
 			arguments: [this]
 		};
 		this.location = location;
 		this.note = undefined;
+		this.tooltip = undefined;
 	}
 
 	public setNote(n: string) {

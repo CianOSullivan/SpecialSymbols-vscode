@@ -1,33 +1,25 @@
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
-import { Favourite, TreeItem } from './Favourite';
+import { FavouriteProvider, TreeItem } from './FavouriteProvider';
 import { existsSync, mkdirSync, writeFile, readFileSync } from 'fs';
-import { LocalStorageService } from './LocalStorageService';
 
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+// Initialise extension and its commands
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "secondext" is now active!');
-
+	let disposable: vscode.Disposable;
 	const storagePath: string = context.globalStorageUri.fsPath;
 	const storageFile: string = Uri.joinPath(context.globalStorageUri, "favourites").path;
 	checkPathExists(storagePath, storageFile);
 	console.debug("Storage file: " + storageFile);
 
-	const treeMaker = new Favourite(storageFile, context);
+	const treeMaker = new FavouriteProvider(storageFile, context);
 
-
-	vscode.commands.registerCommand('favourite.addEntry', (item: TreeItem) => {
-		vscode.window.showInformationMessage('Successfully called add entry.');
+	disposable = vscode.commands.registerCommand('favourite.goToSymbol', (item: TreeItem) => {
 		gotoSymbol(item);
 	});
+	context.subscriptions.push(disposable);
 
-	vscode.commands.registerCommand('favourite.addNote', (item: TreeItem) => {
-		vscode.window.showInformationMessage('Successfully called add note.');
+	disposable = vscode.commands.registerCommand('favourite.addNote', (item: TreeItem) => {
 		let options: vscode.InputBoxOptions = {
 			prompt: "Enter symbol note: ",
 			placeHolder: "Note"
@@ -40,29 +32,24 @@ export function activate(context: vscode.ExtensionContext) {
 			treeMaker.addNote(item, value);
 		});
 	});
+	context.subscriptions.push(disposable);
 
 
-	//vscode.window.registerTreeDataProvider('favouriteBar', favouriteBar);
 	vscode.window.createTreeView('favouriteBar', {
 		treeDataProvider: treeMaker
 	});
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('secondext.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
+	disposable = vscode.commands.registerCommand('favourite.addSymbol', () => {
 		getSymbols(storageFile);
-
-		vscode.window.showInformationMessage('Hello World from SecondExt!');
 	});
+	context.subscriptions.push(disposable);
 
+	disposable = vscode.commands.registerCommand('favourite.delSymbol', (item: TreeItem) => {
+		delSymbol(item, storageFile);
+	});
 	context.subscriptions.push(disposable);
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
 
 function getSymbols(path: string) {
 	var activeEditor = vscode.window.activeTextEditor;
@@ -75,26 +62,33 @@ function getSymbols(path: string) {
 				}
 		})
 		.then(undefined, err => {
-			console.error('Error: Could not retrieve sycmbols list.');
+			console.error('Error: Could not retrieve symbols list.');
 			console.error(err);
 		 });
 	}
 }
 
+
 function checkExists(activeEditor: vscode.TextEditor, symbols: vscode.DocumentSymbol[], path: string) {
 	let cursorPos = activeEditor.selection.active;
 	console.debug("Cursor Line: " + cursorPos.line);
-
+	console.log(symbols);
 	symbols.forEach(element => {
-		console.debug(element);
+		console.debug("Check symbol: " + JSON.stringify(element));
 		// If cursorPos on same line as function
+		element.children.forEach(child => {
+			if (cursorPos.line === child.range.start.line) {
+				addFavourite(activeEditor, child, path);
+				return;
+			}
+		});
 		if (cursorPos.line === element.range.start.line) {
 			addFavourite(activeEditor, element, path);
-		} else {
-			console.debug("Not the selected symbol");
+			return;
 		}
 	});
 }
+
 
 function addFavourite(activeEditor: vscode.TextEditor, symbol: vscode.DocumentSymbol, path: string) {
 	console.debug("Add favourite: " + symbol.name + " on line " + symbol.range.start.line);
@@ -119,7 +113,44 @@ function addFavourite(activeEditor: vscode.TextEditor, symbol: vscode.DocumentSy
 
 		// success case, the file was saved
 		console.debug('Favourites file updated!');
-	});}
+	});
+}
+
+
+function delSymbol(item: TreeItem, path: string) {
+	let key: string;
+	console.log("Deleting: " + item);
+
+	const fileJSON = readFileSync(path,'utf8');
+
+	let obj = JSON.parse(fileJSON);
+	if (typeof item.label === "string") {
+		key = item.label;
+	} else {
+		console.debug("Could not delete symbol");
+		return;
+	}
+
+	// It is a filename and all children need to be deleted
+	if (item.children !== undefined) {
+		delete obj[key];
+	} else {
+		// else it is a symbol inside a file and should be deleted
+		if (item.location !== undefined) {
+			let newList = removeItem(obj[item.location], key);
+			obj[item.location] = newList;
+		}
+	}
+	writeFile(path, JSON.stringify(obj), {flag: 'w'}, (err) => {
+		if (err) {
+			throw err;
+		}
+
+		// success case, the file was saved
+		console.debug('Favourites file updated!');
+	});
+}
+
 
 function checkPathExists(storagePath: string, storageFile: string) {
 	if (!existsSync(storagePath)) {
@@ -138,6 +169,15 @@ function checkPathExists(storagePath: string, storageFile: string) {
 		});
 	}
 }
+
+function removeItem<T>(arr: Array<T>, value: T): Array<T> {
+	const index = arr.indexOf(value);
+	if (index > -1) {
+	  arr.splice(index, 1);
+	}
+	return arr;
+  }
+
 
 function gotoSymbol(item: TreeItem) {
 	if (item.location === undefined) {
@@ -179,7 +219,10 @@ function gotoSymbol(item: TreeItem) {
 				});
 			}
 	}).then(undefined, err => {
-		console.error('Error: Could not retrieve sycmbols list.');
-		console.error(err);
+		console.error('Error: Could not retrieve symbols from file.');
+		vscode.window.showErrorMessage("Could not find symbol in this file.\n\nHas the file name changed?", { modal: true });
 	});
 }
+
+// this method is called when your extension is deactivated
+export function deactivate() {}
