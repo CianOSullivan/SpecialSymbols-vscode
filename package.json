@@ -32,7 +32,11 @@
       {
 				"command": "favourite.addNote",
 				"title": "Add Note"
-			}
+			},
+      {
+        "command": "favourite.refresh",
+        "title": "Refresh TreeView contents"
+      }
     ],
     "viewsContainers": {
       "activitybar": [

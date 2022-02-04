@@ -8,8 +8,10 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 	storageManager: LocalStorageService;
 	context: vscode.ExtensionContext;
 
-	private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined> = new vscode.EventEmitter<TreeItem | undefined>();
-	readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined> = this._onDidChangeTreeData.event;
+
+	private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
+	readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
+
 
 	constructor(f: string, c: vscode.ExtensionContext) {
 		this.storageManager = new LocalStorageService(c.globalState);
@@ -18,7 +20,9 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 		this.data = this.readConfig();
 	}
 
-	refresh(): void {
+	public refresh(): any {
+		console.log("Updating treeview");
+		this.data = this.readConfig();
 		this._onDidChangeTreeData.fire(undefined);
 	}
 
@@ -48,16 +52,16 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 
 		for (var key in obj) {
 			var toAdd: Array<TreeItem> = [];
-			for (var arr in obj[key]) {
-				let item: TreeItem = new TreeItem(obj[key][arr], key);
-				let note: string | undefined = this.storageManager.getValue(key + ":" + obj[key][arr]);
+			obj[key].forEach((element: string) => {
+				let item: TreeItem = new TreeItem(element, key);
+				let note: string | undefined = this.storageManager.getValue(key + ":" + element);
 
 				if (note !== undefined) {
 					item.setNote(note);
 				}
 
 				toAdd.push(item);
-			}
+			});
 			tree.push(new TreeItem(key, undefined, toAdd));
 			toAdd = [];
 		}

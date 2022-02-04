@@ -3,6 +3,7 @@ import { Uri } from 'vscode';
 import { FavouriteProvider, TreeItem } from './FavouriteProvider';
 import { existsSync, mkdirSync, writeFile, readFileSync } from 'fs';
 
+let treeProvider: FavouriteProvider;
 
 // Initialise extension and its commands
 export function activate(context: vscode.ExtensionContext) {
@@ -12,7 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
 	checkPathExists(storagePath, storageFile);
 	console.debug("Storage file: " + storageFile);
 
-	const treeMaker = new FavouriteProvider(storageFile, context);
+	treeProvider = new FavouriteProvider(storageFile, context);
 
 	disposable = vscode.commands.registerCommand('favourite.goToSymbol', (item: TreeItem) => {
 		gotoSymbol(item);
@@ -29,14 +30,13 @@ export function activate(context: vscode.ExtensionContext) {
 			if (!value) {
 				return;
 			}
-			treeMaker.addNote(item, value);
+			treeProvider.addNote(item, value);
 		});
 	});
 	context.subscriptions.push(disposable);
 
-
 	vscode.window.createTreeView('favouriteBar', {
-		treeDataProvider: treeMaker
+		treeDataProvider: treeProvider
 	});
 
 	disposable = vscode.commands.registerCommand('favourite.addSymbol', () => {
@@ -71,10 +71,8 @@ function getSymbols(path: string) {
 
 function checkExists(activeEditor: vscode.TextEditor, symbols: vscode.DocumentSymbol[], path: string) {
 	let cursorPos = activeEditor.selection.active;
-	console.debug("Cursor Line: " + cursorPos.line);
-	console.log(symbols);
+
 	symbols.forEach(element => {
-		console.debug("Check symbol: " + JSON.stringify(element));
 		// If cursorPos on same line as function
 		element.children.forEach(child => {
 			if (cursorPos.line === child.range.start.line) {
@@ -91,9 +89,6 @@ function checkExists(activeEditor: vscode.TextEditor, symbols: vscode.DocumentSy
 
 
 function addFavourite(activeEditor: vscode.TextEditor, symbol: vscode.DocumentSymbol, path: string) {
-	console.debug("Add favourite: " + symbol.name + " on line " + symbol.range.start.line);
-	console.debug("Storing at: " + path);
-
 	const fileJSON = readFileSync(path,'utf8');
 
 	let obj = JSON.parse(fileJSON);
@@ -103,8 +98,14 @@ function addFavourite(activeEditor: vscode.TextEditor, symbol: vscode.DocumentSy
 	}
 
 	console.log("Adding: " + symbol.name);
-	list.push(symbol.name);
 	obj[activeEditor.document.fileName] = list;
+
+	// Check if symbol already in array
+	if (list.indexOf(symbol.name) !== -1) {
+		return;
+	}
+
+	list.push(symbol.name);
 
 	writeFile(path, JSON.stringify(obj), {flag: 'w'}, (err) => {
 		if (err) {
@@ -113,17 +114,16 @@ function addFavourite(activeEditor: vscode.TextEditor, symbol: vscode.DocumentSy
 
 		// success case, the file was saved
 		console.debug('Favourites file updated!');
+		treeProvider.refresh();
 	});
 }
 
 
 function delSymbol(item: TreeItem, path: string) {
 	let key: string;
-	console.log("Deleting: " + item);
-
 	const fileJSON = readFileSync(path,'utf8');
-
 	let obj = JSON.parse(fileJSON);
+
 	if (typeof item.label === "string") {
 		key = item.label;
 	} else {
@@ -141,6 +141,7 @@ function delSymbol(item: TreeItem, path: string) {
 			obj[item.location] = newList;
 		}
 	}
+
 	writeFile(path, JSON.stringify(obj), {flag: 'w'}, (err) => {
 		if (err) {
 			throw err;
@@ -148,6 +149,7 @@ function delSymbol(item: TreeItem, path: string) {
 
 		// success case, the file was saved
 		console.debug('Favourites file updated!');
+		treeProvider.refresh();
 	});
 }
 
@@ -191,7 +193,6 @@ function gotoSymbol(item: TreeItem) {
 		(symbols) => {
 			if (symbols !== undefined && Array.isArray(symbols)) {
 				symbols.forEach(element => {
-
 					if (element.name === item.label) {
 						// Go to the file
 						vscode.workspace.openTextDocument(uri).then(doc => {
@@ -212,10 +213,7 @@ function gotoSymbol(item: TreeItem) {
 								return;
 							});
 						});
-
-
 					}
-
 				});
 			}
 	}).then(undefined, err => {
