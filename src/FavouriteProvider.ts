@@ -91,33 +91,50 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 	 */
 	private readConfig() : TreeItem[] {
 		var tree: Array<TreeItem> = [];
-		const fileJSON = readFileSync(this.confFile);
-		const obj = JSON.parse(fileJSON.toString());
-		let item: TreeItem;
+		var obj;
+		const promise = new Promise<Buffer>((resolve) => {
+			const fileJSON = readFileSync(this.confFile);
+			resolve(fileJSON);
+		});
 
-		for (var key in obj) {
-			var toAdd: Array<TreeItem> = [];
-			obj[key].forEach((element: string) => {
-				item = new TreeItem(element, key);
-				let note: string | undefined = this.storageManager.getValue(key + ":" + element);
+		// I have no idea how to use promises
+		// I just think I need it here so the file is initialised
+		promise.then(fileJSON => {
+			obj = JSON.parse(fileJSON.toString());
+			let item: TreeItem;
 
-				if (note) {
-					item.setNote(note);
+			for (var key in obj) {
+				var toAdd: Array<TreeItem> = [];
+				obj[key].forEach((element: string) => {
+					item = new TreeItem(element, key);
+					let note: string | undefined = this.storageManager.getValue(key + ":" + element);
+
+					if (note) {
+						item.setNote(note);
+					}
+
+					toAdd.push(item);
+				});
+
+				// Get only the filename from path
+				var filename = key.split("/").pop();
+				if (filename) {
+					if (toAdd.length === 0) {
+						continue;
+					}
+					item = new TreeItem(filename, key, toAdd);
+					item.setNote(key); // Show the full filename on hover
+					tree.push(item);
 				}
-
-				toAdd.push(item);
-			});
-
-			// Get only the filename from path
-			var filename = key.split("/").pop();
-			if (filename) {
-				item = new TreeItem(filename, key, toAdd);
-				item.setNote(key); // Show the full filename on hover
-				tree.push(item);
+				toAdd = [];
 			}
-			toAdd = [];
-		}
 
+			return tree;
+
+		}).catch(err => {
+			console.log(err);
+			return;
+		});
 		return tree;
 	}
 }

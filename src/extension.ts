@@ -5,18 +5,30 @@ import { existsSync, mkdirSync, writeFile, readFileSync } from 'fs';
 
 let treeProvider: FavouriteProvider;
 
+
 // Initialise extension and its commands
 export function activate(context: vscode.ExtensionContext) {
 	let disposable: vscode.Disposable;
+	let tree: vscode.TreeView<TreeItem>;
 	const storagePath: string = context.globalStorageUri.fsPath;
 	const storageFile: string = Uri.joinPath(context.globalStorageUri, "favourites").path;
-	checkPathExists(storagePath, storageFile);
 
-	// Create the TreeView
-	treeProvider = new FavouriteProvider(storageFile, context);
-	let tree = vscode.window.createTreeView('favouriteBar', {
-		treeDataProvider: treeProvider
+	const promise = new Promise((resolve) => {
+		resolve(checkPathExists(storagePath, storageFile));
 	});
+
+	promise.then(res => {
+		// Create the TreeView
+		treeProvider = new FavouriteProvider(storageFile, context);
+		tree = vscode.window.createTreeView('favouriteBar', {
+			treeDataProvider: treeProvider
+		});
+	}).catch(err => {
+		console.log(err);
+		return;
+	});
+
+
 
 	disposable = vscode.commands.registerCommand('favourite.goToSymbol', (item: TreeItem) => {
 		gotoSymbol(item);
@@ -127,30 +139,41 @@ function addIfExists(activeEditor: vscode.TextEditor, symbols: vscode.DocumentSy
  * @returns			undefined
  */
 function addFavourite(filename: string, symbol: vscode.DocumentSymbol, path: string) {
-	const fileJSON = readFileSync(path,'utf8');
+	const promise = new Promise<string>((resolve) => {
+		const fileJSON = readFileSync(path,'utf8');
+		resolve(fileJSON);
+	});
 
-	let obj = JSON.parse(fileJSON);
-	let list = obj[filename];
-	if (!Array.isArray(list)) {
-		list = [];
-	}
+	promise.then(fileJSON => {
+		// Create the TreeView
 
-	obj[filename] = list;
-
-	// Check if symbol already in array
-	if (list.indexOf(symbol.name) !== -1) {
-		return;
-	}
-
-	list.push(symbol.name);
-
-	writeFile(path, JSON.stringify(obj), {flag: 'w'}, (err) => {
-		if (err) {
-			throw err;
+		let obj = JSON.parse(fileJSON);
+		let list = obj[filename];
+		if (!Array.isArray(list)) {
+			list = [];
 		}
 
-		treeProvider.refresh();
+		obj[filename] = list;
+
+		// Check if symbol already in array
+		if (list.indexOf(symbol.name) !== -1) {
+			return;
+		}
+
+		list.push(symbol.name);
+
+		writeFile(path, JSON.stringify(obj), {flag: 'w'}, (err) => {
+			if (err) {
+				throw err;
+			}
+
+			treeProvider.refresh();
+		});
+	}).catch(err => {
+		console.log(err);
+		return;
 	});
+
 }
 
 /**
@@ -207,10 +230,11 @@ function checkPathExists(storagePath: string, storageFile: string) {
 		console.debug("Creating" + storageFile);
 		writeFile(storageFile, "{ }", {flag: 'a+'}, (err) => {
 			if (err) {
-				throw err;
+				return false;
 			}
 		});
 	}
+	return true;
 }
 
 /**
