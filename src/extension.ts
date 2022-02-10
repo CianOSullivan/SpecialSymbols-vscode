@@ -13,22 +13,13 @@ export function activate(context: vscode.ExtensionContext) {
 	const storagePath: string = context.globalStorageUri.fsPath;
 	const storageFile: string = Uri.joinPath(context.globalStorageUri, "favourites").path;
 
-	const promise = new Promise((resolve) => {
-		resolve(checkPathExists(storagePath, storageFile));
+	checkPathExists(storagePath, storageFile);
+
+	// Create the TreeView
+	treeProvider = new FavouriteProvider(storageFile, context);
+	tree = vscode.window.createTreeView('favouriteBar', {
+		treeDataProvider: treeProvider
 	});
-
-	promise.then(res => {
-		// Create the TreeView
-		treeProvider = new FavouriteProvider(storageFile, context);
-		tree = vscode.window.createTreeView('favouriteBar', {
-			treeDataProvider: treeProvider
-		});
-	}).catch(err => {
-		console.log(err);
-		return;
-	});
-
-
 
 	disposable = vscode.commands.registerCommand('favourite.goToSymbol', (item: TreeItem) => {
 		gotoSymbol(item);

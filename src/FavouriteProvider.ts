@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { readFileSync} from 'fs';
 import { StorageService } from './StorageService';
+import { readFileSync } from 'fs';
 
 
 /**
@@ -84,6 +84,7 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 		//this.context.globalState.setKeysForSync([key]);
 	}
 
+
 	/**
 	 * Read the config file and store it in this.data
 	 *
@@ -92,49 +93,43 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 	private readConfig() : TreeItem[] {
 		var tree: Array<TreeItem> = [];
 		var obj;
-		const promise = new Promise<Buffer>((resolve) => {
-			const fileJSON = readFileSync(this.confFile);
-			resolve(fileJSON);
-		});
 
-		// I have no idea how to use promises
-		// I just think I need it here so the file is initialised
-		promise.then(fileJSON => {
-			obj = JSON.parse(fileJSON.toString());
-			let item: TreeItem;
+		const fileJSON = readFileSync(this.confFile);
+		// On install, the file is not ready yet
+		// Not too happy with this but remains K.I.S.S for now
+		if (fileJSON.length === 0) {
+			return [];
+		}
 
-			for (var key in obj) {
-				var toAdd: Array<TreeItem> = [];
-				obj[key].forEach((element: string) => {
-					item = new TreeItem(element, key);
-					let note: string | undefined = this.storageManager.getValue(key + ":" + element);
+		obj = JSON.parse(fileJSON.toString());
+		let item: TreeItem;
 
-					if (note) {
-						item.setNote(note);
-					}
+		for (var key in obj) {
+			var toAdd: Array<TreeItem> = [];
+			obj[key].forEach((element: string) => {
+				item = new TreeItem(element, key);
+				let note: string | undefined = this.storageManager.getValue(key + ":" + element);
 
-					toAdd.push(item);
-				});
-
-				// Get only the filename from path
-				var filename = key.split("/").pop();
-				if (filename) {
-					if (toAdd.length === 0) {
-						continue;
-					}
-					item = new TreeItem(filename, key, toAdd);
-					item.setNote(key); // Show the full filename on hover
-					tree.push(item);
+				if (note) {
+					item.setNote(note);
 				}
-				toAdd = [];
+
+				toAdd.push(item);
+			});
+
+			// Get only the filename from path
+			var filename = key.split("/").pop();
+			if (filename) {
+				if (toAdd.length === 0) {
+					continue;
+				}
+				item = new TreeItem(filename, key, toAdd);
+				item.setNote(key); // Show the full filename on hover
+				tree.push(item);
 			}
+			toAdd = [];
+		}
 
-			return tree;
-
-		}).catch(err => {
-			console.log(err);
-			return;
-		});
 		return tree;
 	}
 }
