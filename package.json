@@ -1,8 +1,8 @@
 {
-  "name": "favourites",
+  "name": "special-symbols",
   "publisher": "Cian O'Sullivan",
-  "displayName": "Favourites",
-  "description": "Favourites Extension",
+  "displayName": "SpecialSymbols",
+  "description": "Favorite symbols and jump to them",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.63.0"
