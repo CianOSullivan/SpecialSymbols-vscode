@@ -1,18 +1,26 @@
 {
   "name": "special-symbols",
-  "publisher": "Cian O'Sullivan",
+  "publisher": "topizzl",
   "displayName": "SpecialSymbols",
   "description": "Favorite symbols and jump to them",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.63.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CianOSullivan/SpecialSymbols-vscode"
+  },
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "*",
-    "onView:favouriteBar"
+    "onView:favouriteBar",
+    "onCommand:favourite.addSymbol",
+    "onCommand:favourite.delSymbol",
+    "onCommand:favourite.gotoSymbol",
+    "onCommand:favourite.addNote",
+    "onCommand:favourite.refresh"
   ],
   "main": "./out/extension.js",
   "contributes": {
