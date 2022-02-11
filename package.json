@@ -3,7 +3,7 @@
   "publisher": "topizzl",
   "displayName": "SpecialSymbols",
   "description": "Favorite symbols and jump to them",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.63.0"
   },
@@ -34,13 +34,13 @@
         "title": "Delete"
       },
       {
-				"command": "favourite.goToSymbol",
-				"title": "Go to"
-			},
+        "command": "favourite.goToSymbol",
+        "title": "Go to"
+      },
       {
-				"command": "favourite.addNote",
-				"title": "Add Note"
-			},
+        "command": "favourite.addNote",
+        "title": "Add Note"
+      },
       {
         "command": "favourite.refresh",
         "title": "Refresh TreeView contents"
@@ -79,19 +79,19 @@
       ],
       "view/item/context": [
         {
-					"command": "favourite.goToSymbol"
+          "command": "favourite.goToSymbol"
         },
         {
-					"command": "favourite.delSymbol"
+          "command": "favourite.delSymbol"
         },
         {
-					"command": "favourite.addNote",
-          "group":   "inline"
+          "command": "favourite.addNote",
+          "group": "inline"
         }
       ],
       "view/title": [
         {
-					"command": "favourite.collapseAll"
+          "command": "favourite.collapseAll"
         }
       ]
     }
