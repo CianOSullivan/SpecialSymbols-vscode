@@ -10,7 +10,6 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 	data: TreeItem[];
 	confFile: string;
 	storageManager: StorageService;
-	context: vscode.ExtensionContext;
 
 	// Trigger update of TreeView when the data changes
 	private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
@@ -20,11 +19,10 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 	 * Create a new Favourites Provider
 	 *
 	 * @param f	the favourites config file location
-	 * @param c the extension context
+	 * @param s	the storage service instance
 	 */
-	constructor(f: string, c: vscode.ExtensionContext) {
-		this.storageManager = new StorageService(c.globalState);
-		this.context = c;
+	constructor(f: string, s: StorageService) {
+		this.storageManager = s;
 		this.confFile = f;
 		this.data = this.readConfig();
 	}

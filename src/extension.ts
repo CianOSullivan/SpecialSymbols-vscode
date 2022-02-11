@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 import { FavouriteProvider, TreeItem } from './FavouriteProvider';
 import { existsSync, mkdirSync, writeFile, readFileSync } from 'fs';
+import { StorageService } from './StorageService';
 
 let treeProvider: FavouriteProvider;
 
@@ -13,10 +14,11 @@ export function activate(context: vscode.ExtensionContext) {
 	const storagePath: string = context.globalStorageUri.fsPath;
 	const storageFile: string = Uri.joinPath(context.globalStorageUri, "favourites").path;
 
+	let storage = new StorageService(context.globalState);
 	checkPathExists(storagePath, storageFile);
 
 	// Create the TreeView
-	treeProvider = new FavouriteProvider(storageFile, context);
+	treeProvider = new FavouriteProvider(storageFile, storage);
 	tree = vscode.window.createTreeView('favouriteBar', {
 		treeDataProvider: treeProvider
 	});
