@@ -1,0 +1,3 @@
+#!/bin/bash
+# Would forget to bump version otherwise!
+vsce publish minor
