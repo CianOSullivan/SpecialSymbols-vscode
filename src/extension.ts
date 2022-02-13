@@ -73,6 +73,7 @@ function addNoteInput(item: TreeItem) {
 			return;
 		}
 		treeProvider.addNote(item, value);
+		treeProvider.refresh();
 	});
 }
 
