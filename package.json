@@ -72,7 +72,7 @@
     "menus": {
       "editor/context": [
         {
-          "when": "resourceLangId == typescript",
+          "when": "textInputFocus && !editorReadonly",
           "command": "favourite.addSymbol",
           "group": "favourite"
         }
