@@ -20,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Create the TreeView
 	treeProvider = new FavouriteProvider(storageFile, storage);
 	tree = vscode.window.createTreeView('favouriteBar', {
-		treeDataProvider: treeProvider
+		treeDataProvider: treeProvider,
 	});
 
 	disposable = vscode.commands.registerCommand('favourite.goToSymbol', (item: TreeItem) => {
@@ -44,12 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 
 	disposable = vscode.commands.registerCommand('favourite.collapseAll', () => {
-		treeProvider.data.forEach(element => {
-			element.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-			console.log("Collapse: " + element.label);
-			tree.reveal(element, {select: false, focus: false, expand: true});
-			treeProvider.refresh();
-		});
+		treeProvider.collapseTree();
 	});
 
 	context.subscriptions.push(disposable);
@@ -88,6 +83,9 @@ function getSymbols(path: string) {
 	if (activeEditor) {
 		vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", activeEditor.document.uri).then(
 			(symbols) => {
+				if (!symbols) {
+					vscode.window.showErrorMessage("SpecialSymbols: Could not retrieve list of symbols. Please install a language extension for this file type.");
+				}
 				if (symbols && Array.isArray(symbols) && activeEditor) {
 					addIfExists(activeEditor, symbols, path);
 				}
@@ -164,7 +162,7 @@ function addFavourite(filename: string, symbol: vscode.DocumentSymbol, path: str
 			treeProvider.refresh();
 		});
 	}).catch(err => {
-		console.log(err);
+		console.error(err);
 		return;
 	});
 
@@ -178,6 +176,7 @@ function addFavourite(filename: string, symbol: vscode.DocumentSymbol, path: str
  * @returns 	undefined
  */
 function delSymbol(item: TreeItem, path: string) {
+
 	let key: string;
 	const fileJSON = readFileSync(path,'utf8');
 	let obj = JSON.parse(fileJSON);
@@ -253,7 +252,6 @@ function removeItem<T>(arr: Array<T>, value: T): Array<T> {
  * @returns 	undefined
  */
 function gotoSymbol(item: TreeItem) {
-	console.log(item.location);
 	if (item.location === undefined) {
 		return;
 	}
@@ -296,7 +294,6 @@ function gotoSymbol(item: TreeItem) {
  * @param uri 		the document uri
  */
 function goToExistSymbol(element: vscode.SymbolInformation, uri: Uri) {
-	console.log("Element name: " + element.name);
 	// Go to the file
 	vscode.workspace.openTextDocument(uri).then(doc => {
 		vscode.window.showTextDocument(doc).then(() => {
@@ -306,8 +303,6 @@ function goToExistSymbol(element: vscode.SymbolInformation, uri: Uri) {
 				const position = editor.selection.active;
 				let range = element.location.range;
 				var newPosition = position.with(range.start.line, 0);
-				console.log("Moving to ");
-				console.log(newPosition);
 
 				var newSelection = new vscode.Selection(newPosition, newPosition);
 				editor.selection = newSelection;

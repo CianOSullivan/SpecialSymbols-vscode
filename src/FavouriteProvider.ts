@@ -130,6 +130,13 @@ export class FavouriteProvider implements vscode.TreeDataProvider<TreeItem> {
 
 		return tree;
 	}
+
+	/**
+	 * Collapse all parent nodes in the tree
+	 */
+	public collapseTree() {
+		vscode.commands.executeCommand("workbench.actions.treeView.favouriteBar.collapseAll");
+	}
 }
 
 
@@ -171,12 +178,5 @@ export class TreeItem extends vscode.TreeItem {
 	 */
 	public setNote(n: string) {
 		this.tooltip = n;
-	}
-
-	/**
-	 * Set the item to be collapesed in the treeview
-	 */
-	public setCollapsed() {
-		this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 	}
 }

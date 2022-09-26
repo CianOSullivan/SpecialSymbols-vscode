@@ -16,6 +16,6 @@ The symbol will then appear in the SpecialSymbols sidebar.
 
 Go to a symbol by clicking the symbol. It is as easy as that!
 
-Notes can be added to each symbols by clicking the 'Add note' button on the symbol in the sidebar.
+Notes can be added to each symbols by clicking the 'Add note' button on the symbol in the sidebar. To view a note, hover over the symbol in the sidebar.
 
 Symbols can be deleted from the sidebar by right-clicking the symbol and clicking the 'Delete' button.
